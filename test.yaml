@@ -27,7 +27,9 @@ spec:
         - migration_type
         - has_app_web_server
         - assigned_user
+        - validate_assigned_user
         - assigned_cloud_architect
+        - validate_cloud_architect
         - isbia_risk_rating
         - data_class
         - criticality
@@ -75,11 +77,53 @@ spec:
           default: "@bank.com"
           ui:placeholder: "username@bank.com"
 
+        validate_assigned_user:
+          type: string
+          ui:field: ValidateAndFetch
+          ui:options:
+            button:
+              title: Validate User
+            path: proxy/onboard-api/latest/ad/query
+            params:
+              email: "{{parameters.assigned_user}}"
+            setContextData:
+              userName: displayName
+              userEmail: mail
+
+        validated_user_display:
+          type: string
+          ui:field: ContextViewer
+          ui:options:
+            title: Validated User
+            readOnly: true
+            getContextData: ${{ formContext.userName }}
+
         assigned_cloud_architect:
           type: string
           title: "Who is the assigned cloud architect to approve the onboard of the application?"
           default: "@bank.com"
           ui:placeholder: "architect@bank.com"
+
+        validate_cloud_architect:
+          type: string
+          ui:field: ValidateAndFetch
+          ui:options:
+            button:
+              title: Validate Architect
+            path: proxy/onboard-api/latest/ad/query
+            params:
+              email: "{{parameters.assigned_cloud_architect}}"
+            setContextData:
+              architectName: displayName
+              architectEmail: mail
+
+        validated_architect_display:
+          type: string
+          ui:field: ContextViewer
+          ui:options:
+            title: Validated Architect
+            readOnly: true
+            getContextData: ${{ formContext.architectName }}
 
         assignment_group:
           type: string
@@ -363,7 +407,11 @@ spec:
           migration_type: ${{ parameters.migration_type }}
           has_app_web_server: ${{ parameters.has_app_web_server }}
           assigned_user: ${{ parameters.assigned_user }}
+          validate_assigned_user: ${{ parameters.validate_assigned_user }}
+          validated_user_name: ${{ parameters.validated_user_display }}
           assigned_cloud_architect: ${{ parameters.assigned_cloud_architect }}
+          validate_cloud_architect: ${{ parameters.validate_cloud_architect }}
+          validated_architect_name: ${{ parameters.validated_architect_display }}
           assignment_group: ${{ parameters.assignment_group }}
           isbia_risk_rating: ${{ parameters.isbia_risk_rating }}
           support: ${{ parameters.support }}
