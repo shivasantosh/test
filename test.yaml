@@ -23,9 +23,8 @@ spec:
     # ============================================
     - title: "Step 1 - Application Details"
       required:
-        - is_migrating_onprem
-        - is_migrating_legacy
-        - is_migrating_workload
+        - application_id
+        - migration_type
         - has_app_web_server
         - knows_standard_pattern
         - uses_containers
@@ -36,6 +35,7 @@ spec:
         - data_class
         - cloud_type
         - is_public_facing
+        - is_migrating_onprem
       properties:
         token:
           title: Harness Token
@@ -43,29 +43,24 @@ spec:
           ui:widget: password
           ui:field: HarnessAuthToken
 
-        # -------------------------------------------
-        # Checkbox 1 - On-prem migration
-        # -------------------------------------------
-        is_migrating_onprem:
-          type: boolean
-          title: Is this application migrating from on-prem?
-          default: false
-          ui:widget: checkbox
+        application_id:
+          type: string
+          title: Application ID
+          description: "Format: SYSID-XXXXX (e.g. SYSID-00123)"
+          pattern: "^SYSID-[0-9]{5}$"
+          ui:placeholder: "SYSID-00000"
+          ui:help: "Must match format SYSID- followed by 5 digits"
 
-        # -------------------------------------------
-        # Common fields (always visible)
-        # -------------------------------------------
-        is_migrating_legacy:
-          type: boolean
-          title: Is this application migrating from legacy to bifrost?
-          default: false
-          ui:widget: checkbox
-
-        is_migrating_workload:
-          type: boolean
-          title: Is this application migrating from workload to bifrost?
-          default: false
-          ui:widget: checkbox
+        migration_type:
+          type: string
+          title: Migration Type
+          description: Select the migration path for this application
+          enum:
+            - Legacy to Bifrost
+            - Workload to Bifrost
+            - None
+          default: None
+          ui:widget: radio
 
         has_app_web_server:
           type: boolean
@@ -152,10 +147,15 @@ spec:
             - "Yes"
             - "No"
 
+        is_migrating_onprem:
+          type: boolean
+          title: Is this application migrating from on-prem?
+          default: false
+          ui:widget: checkbox
+
       dependencies:
         is_migrating_onprem:
           oneOf:
-            # If NOT migrating → show app detail fields
             - properties:
                 is_migrating_onprem:
                   enum:
@@ -194,7 +194,6 @@ spec:
                 - cots_type
                 - dev_framework
                 - app_architecture
-            # If migrating → skip those fields
             - properties:
                 is_migrating_onprem:
                   enum:
@@ -285,7 +284,7 @@ spec:
                     - false
 
   # ============================================
-  # ACTIONS - Backend Pipeline Trigger
+  # ACTIONS
   # ============================================
   steps:
     - id: trigger
@@ -294,13 +293,8 @@ spec:
       input:
         url: "https://app.harness.io/ng/account/ACCOUNT_ID/module/idp/orgs/ORG_ID/projects/PROJECT_ID/pipelines/PIPELINE_ID/pipeline-studio"
         inputset:
-          is_migrating_onprem: ${{ parameters.is_migrating_onprem }}
-          app_type: ${{ parameters.app_type }}
-          cots_type: ${{ parameters.cots_type }}
-          dev_framework: ${{ parameters.dev_framework }}
-          app_architecture: ${{ parameters.app_architecture }}
-          is_migrating_legacy: ${{ parameters.is_migrating_legacy }}
-          is_migrating_workload: ${{ parameters.is_migrating_workload }}
+          application_id: ${{ parameters.application_id }}
+          migration_type: ${{ parameters.migration_type }}
           has_app_web_server: ${{ parameters.has_app_web_server }}
           knows_standard_pattern: ${{ parameters.knows_standard_pattern }}
           uses_containers: ${{ parameters.uses_containers }}
@@ -314,6 +308,11 @@ spec:
           data_class: ${{ parameters.data_class }}
           cloud_type: ${{ parameters.cloud_type }}
           is_public_facing: ${{ parameters.is_public_facing }}
+          is_migrating_onprem: ${{ parameters.is_migrating_onprem }}
+          app_type: ${{ parameters.app_type }}
+          cots_type: ${{ parameters.cots_type }}
+          dev_framework: ${{ parameters.dev_framework }}
+          app_architecture: ${{ parameters.app_architecture }}
           same_approvers: ${{ parameters.same_approvers }}
           jenkins_primary_approver: ${{ parameters.jenkins_primary_approver }}
           jenkins_secondary_approver: ${{ parameters.jenkins_secondary_approver }}
