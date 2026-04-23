@@ -1,0 +1,327 @@
+apiVersion: harness.io/v1
+kind: Workflow
+name: Application Onboarding
+identifier: application_onboarding
+type: service
+owner: platform-team
+metadata:
+  description: Onboard applications to cloud infrastructure
+  tags:
+    - onboarding
+    - cloud
+
+spec:
+  lifecycle: production
+  output:
+    links:
+      - title: Pipeline Details
+        url: ${{ steps.trigger.output.PipelineUrl }}
+
+  parameters:
+    # ============================================
+    # STEP 1 - Application Details
+    # ============================================
+    - title: "Step 1 - Application Details"
+      required:
+        - is_migrating_onprem
+        - is_migrating_legacy
+        - is_migrating_workload
+        - has_app_web_server
+        - knows_standard_pattern
+        - uses_containers
+        - uses_virtual_machines
+        - assigned_user
+        - assigned_cloud_architect
+        - isbia_risk_rating
+        - data_class
+        - cloud_type
+        - is_public_facing
+      properties:
+        token:
+          title: Harness Token
+          type: string
+          ui:widget: password
+          ui:field: HarnessAuthToken
+
+        # -------------------------------------------
+        # Checkbox 1 - On-prem migration
+        # -------------------------------------------
+        is_migrating_onprem:
+          type: boolean
+          title: Is this application migrating from on-prem?
+          default: false
+          ui:widget: checkbox
+
+        # -------------------------------------------
+        # Common fields (always visible)
+        # -------------------------------------------
+        is_migrating_legacy:
+          type: boolean
+          title: Is this application migrating from legacy to bifrost?
+          default: false
+          ui:widget: checkbox
+
+        is_migrating_workload:
+          type: boolean
+          title: Is this application migrating from workload to bifrost?
+          default: false
+          ui:widget: checkbox
+
+        has_app_web_server:
+          type: boolean
+          title: Does this application have an app or web server?
+          default: false
+          ui:widget: checkbox
+
+        knows_standard_pattern:
+          type: boolean
+          title: Do you know which standard pattern matches your application?
+          default: false
+          ui:widget: checkbox
+
+        uses_containers:
+          type: boolean
+          title: Does this application use containers?
+          default: false
+          ui:widget: checkbox
+
+        uses_virtual_machines:
+          type: boolean
+          title: "Does this application run on virtual machines? (e.g. .Net, Java app)"
+          default: false
+          ui:widget: checkbox
+
+        assigned_user:
+          type: string
+          title: "Who is the assigned user requesting onboard of this application?"
+          ui:placeholder: "Enter user name or email"
+
+        assigned_cloud_architect:
+          type: string
+          title: "Who is the assigned cloud architect to approve the onboard of the application?"
+          ui:placeholder: "Enter architect name or email"
+
+        assignment_group:
+          type: string
+          title: Assignment Group (Optional)
+          ui:placeholder: "Enter assignment group"
+
+        isbia_risk_rating:
+          type: string
+          title: What is your ISBIA risk rating for this app?
+          enum:
+            - Critical
+            - Major
+            - Significant
+            - Important
+            - Minor
+            - Unknown
+
+        support:
+          type: string
+          title: Support
+          ui:placeholder: "Enter support details"
+
+        department_number:
+          type: string
+          title: Department Number
+          ui:placeholder: "Enter department number"
+
+        data_class:
+          type: string
+          title: DataClass
+          enum:
+            - Public
+            - Private
+            - Restricted
+            - Confidential
+            - Internal
+            - Other
+
+        cloud_type:
+          type: string
+          title: Select Cloud Type
+          enum:
+            - Aws
+            - Azure
+
+        is_public_facing:
+          type: string
+          title: Is your application public facing?
+          enum:
+            - "Yes"
+            - "No"
+
+      dependencies:
+        is_migrating_onprem:
+          oneOf:
+            # If NOT migrating → show app detail fields
+            - properties:
+                is_migrating_onprem:
+                  enum:
+                    - false
+                app_type:
+                  type: string
+                  title: What Type of Application Is This?
+                  enum:
+                    - Layered
+                    - Others
+                cots_type:
+                  type: string
+                  title: Is this a COTS (commercial-off-the-shelf) product?
+                  enum:
+                    - Homegrown
+                    - Cots
+                dev_framework:
+                  type: array
+                  title: What Development Framework Does this run on?
+                  items:
+                    type: string
+                    enum:
+                      - React
+                      - Angular
+                      - Python
+                  uniqueItems: true
+                  ui:widget: checkboxes
+                app_architecture:
+                  type: string
+                  title: What is your application implementation architecture?
+                  enum:
+                    - Microservice
+                    - Single App
+              required:
+                - app_type
+                - cots_type
+                - dev_framework
+                - app_architecture
+            # If migrating → skip those fields
+            - properties:
+                is_migrating_onprem:
+                  enum:
+                    - true
+
+    # ============================================
+    # STEP 2 - Approvers & Jira
+    # ============================================
+    - title: "Step 2 - Approvers & Jira Configuration"
+      required:
+        - same_approvers
+        - create_jira_tickets
+      properties:
+        same_approvers:
+          type: boolean
+          title: Will approvers be the same for all these applications?
+          default: true
+          ui:widget: checkbox
+
+        create_jira_tickets:
+          type: boolean
+          title: Do you want to create Jira tickets?
+          default: false
+          ui:widget: checkbox
+
+      dependencies:
+        same_approvers:
+          oneOf:
+            - properties:
+                same_approvers:
+                  enum:
+                    - false
+                jenkins_primary_approver:
+                  type: string
+                  title: Enter primary Approver of Jenkins
+                  ui:placeholder: "Enter approver name or email"
+                jenkins_secondary_approver:
+                  type: string
+                  title: Enter secondary approver of Jenkins
+                  ui:placeholder: "Enter approver name or email"
+                terraform_primary_approver:
+                  type: string
+                  title: Enter primary Approver of Terraform
+                  ui:placeholder: "Enter approver name or email"
+                terraform_secondary_approver:
+                  type: string
+                  title: Enter secondary approver of Terraform
+                  ui:placeholder: "Enter approver name or email"
+                os_access_primary_approver:
+                  type: string
+                  title: Enter primary Approver of OS Access
+                  ui:placeholder: "Enter approver name or email"
+                os_access_secondary_approver:
+                  type: string
+                  title: Enter secondary approver of OS Access
+                  ui:placeholder: "Enter approver name or email"
+              required:
+                - jenkins_primary_approver
+                - jenkins_secondary_approver
+                - terraform_primary_approver
+                - terraform_secondary_approver
+                - os_access_primary_approver
+                - os_access_secondary_approver
+            - properties:
+                same_approvers:
+                  enum:
+                    - true
+
+        create_jira_tickets:
+          oneOf:
+            - properties:
+                create_jira_tickets:
+                  enum:
+                    - true
+                jira_key:
+                  type: string
+                  title: Jira Key
+                  ui:placeholder: "Enter Jira project key"
+                jira_tags:
+                  type: string
+                  title: Tags
+                  ui:placeholder: "Enter tags (comma-separated)"
+              required:
+                - jira_key
+            - properties:
+                create_jira_tickets:
+                  enum:
+                    - false
+
+  # ============================================
+  # ACTIONS - Backend Pipeline Trigger
+  # ============================================
+  steps:
+    - id: trigger
+      name: Trigger Onboarding Pipeline
+      action: trigger:harness-custom-pipeline
+      input:
+        url: "https://app.harness.io/ng/account/ACCOUNT_ID/module/idp/orgs/ORG_ID/projects/PROJECT_ID/pipelines/PIPELINE_ID/pipeline-studio"
+        inputset:
+          is_migrating_onprem: ${{ parameters.is_migrating_onprem }}
+          app_type: ${{ parameters.app_type }}
+          cots_type: ${{ parameters.cots_type }}
+          dev_framework: ${{ parameters.dev_framework }}
+          app_architecture: ${{ parameters.app_architecture }}
+          is_migrating_legacy: ${{ parameters.is_migrating_legacy }}
+          is_migrating_workload: ${{ parameters.is_migrating_workload }}
+          has_app_web_server: ${{ parameters.has_app_web_server }}
+          knows_standard_pattern: ${{ parameters.knows_standard_pattern }}
+          uses_containers: ${{ parameters.uses_containers }}
+          uses_virtual_machines: ${{ parameters.uses_virtual_machines }}
+          assigned_user: ${{ parameters.assigned_user }}
+          assigned_cloud_architect: ${{ parameters.assigned_cloud_architect }}
+          assignment_group: ${{ parameters.assignment_group }}
+          isbia_risk_rating: ${{ parameters.isbia_risk_rating }}
+          support: ${{ parameters.support }}
+          department_number: ${{ parameters.department_number }}
+          data_class: ${{ parameters.data_class }}
+          cloud_type: ${{ parameters.cloud_type }}
+          is_public_facing: ${{ parameters.is_public_facing }}
+          same_approvers: ${{ parameters.same_approvers }}
+          jenkins_primary_approver: ${{ parameters.jenkins_primary_approver }}
+          jenkins_secondary_approver: ${{ parameters.jenkins_secondary_approver }}
+          terraform_primary_approver: ${{ parameters.terraform_primary_approver }}
+          terraform_secondary_approver: ${{ parameters.terraform_secondary_approver }}
+          os_access_primary_approver: ${{ parameters.os_access_primary_approver }}
+          os_access_secondary_approver: ${{ parameters.os_access_secondary_approver }}
+          create_jira_tickets: ${{ parameters.create_jira_tickets }}
+          jira_key: ${{ parameters.jira_key }}
+          jira_tags: ${{ parameters.jira_tags }}
+        apikey: ${{ parameters.token }}
