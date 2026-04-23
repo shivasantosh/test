@@ -26,15 +26,18 @@ spec:
         - application_id
         - migration_type
         - has_app_web_server
-        - knows_standard_pattern
-        - uses_containers
-        - uses_virtual_machines
         - assigned_user
         - assigned_cloud_architect
         - isbia_risk_rating
         - data_class
+        - criticality
+        - risk_partner_nid
+        - domain
+        - ad_group_primary_approver
+        - ad_group_secondary_approver
         - cloud_type
         - is_public_facing
+        - knows_standard_pattern
         - is_migrating_onprem
       properties:
         token:
@@ -58,8 +61,6 @@ spec:
           enum:
             - Legacy to Bifrost
             - Workload to Bifrost
-            - None
-          default: None
           ui:widget: radio
 
         has_app_web_server:
@@ -68,33 +69,17 @@ spec:
           default: false
           ui:widget: checkbox
 
-        knows_standard_pattern:
-          type: boolean
-          title: Do you know which standard pattern matches your application?
-          default: false
-          ui:widget: checkbox
-
-        uses_containers:
-          type: boolean
-          title: Does this application use containers?
-          default: false
-          ui:widget: checkbox
-
-        uses_virtual_machines:
-          type: boolean
-          title: "Does this application run on virtual machines? (e.g. .Net, Java app)"
-          default: false
-          ui:widget: checkbox
-
         assigned_user:
           type: string
           title: "Who is the assigned user requesting onboard of this application?"
-          ui:placeholder: "Enter user name or email"
+          default: "@bank.com"
+          ui:placeholder: "username@bank.com"
 
         assigned_cloud_architect:
           type: string
           title: "Who is the assigned cloud architect to approve the onboard of the application?"
-          ui:placeholder: "Enter architect name or email"
+          default: "@bank.com"
+          ui:placeholder: "architect@bank.com"
 
         assignment_group:
           type: string
@@ -104,6 +89,7 @@ spec:
         isbia_risk_rating:
           type: string
           title: What is your ISBIA risk rating for this app?
+          default: Unknown
           enum:
             - Critical
             - Major
@@ -115,7 +101,8 @@ spec:
         support:
           type: string
           title: Support
-          ui:placeholder: "Enter support details"
+          default: "@bank.com"
+          ui:placeholder: "support@bank.com"
 
         department_number:
           type: string
@@ -133,6 +120,51 @@ spec:
             - Internal
             - Other
 
+        criticality:
+          type: string
+          title: Criticality
+          enum:
+            - Tier 1
+            - Tier 2
+            - Tier 3
+
+        risk_partner_nid:
+          type: string
+          title: What is your risk partners (NID)?
+          ui:placeholder: "Enter risk partner NID"
+
+        domain:
+          type: string
+          title: Which domain will you be using?
+          default: Corp
+          enum:
+            - Corp
+            - Branch
+            - Internal
+            - CorpQA
+            - BranchQA
+            - InternalQA
+            - External
+            - MTSQA
+            - MTSPROD
+
+        ad_group_primary_approver:
+          type: string
+          title: Enter your ADGroups Primary Approver
+          default: "corp/"
+          ui:placeholder: "corp/group-name"
+
+        ad_group_secondary_approver:
+          type: string
+          title: Enter your AD Groups Secondary Approver
+          default: "corp/"
+          ui:placeholder: "corp/group-name"
+
+        ad_group_delegators:
+          type: string
+          title: Enter your AD Groups Delegators Separated with comma (Optional)
+          ui:placeholder: "user1,user2,user3"
+
         cloud_type:
           type: string
           title: Select Cloud Type
@@ -147,13 +179,47 @@ spec:
             - "Yes"
             - "No"
 
-        is_migrating_onprem:
+        knows_standard_pattern:
           type: boolean
-          title: Is this application migrating from on-prem?
+          title: Do you know which standard pattern matches your application?
           default: false
           ui:widget: checkbox
 
+        is_migrating_onprem:
+          type: boolean
+          title: Is this application migrating from on-prem?
+          default: true
+          ui:widget: checkbox
+
       dependencies:
+        knows_standard_pattern:
+          oneOf:
+            - properties:
+                knows_standard_pattern:
+                  enum:
+                    - true
+                standard_pattern:
+                  type: string
+                  title: Select Standard Pattern
+                  enum:
+                    - Tire Pattern
+              required:
+                - standard_pattern
+            - properties:
+                knows_standard_pattern:
+                  enum:
+                    - false
+                uses_containers:
+                  type: boolean
+                  title: Does this application use containers?
+                  default: false
+                  ui:widget: checkbox
+                uses_virtual_machines:
+                  type: boolean
+                  title: "Does this application run on virtual machines? (e.g. .Net, Java app)"
+                  default: false
+                  ui:widget: checkbox
+
         is_migrating_onprem:
           oneOf:
             - properties:
@@ -296,9 +362,6 @@ spec:
           application_id: ${{ parameters.application_id }}
           migration_type: ${{ parameters.migration_type }}
           has_app_web_server: ${{ parameters.has_app_web_server }}
-          knows_standard_pattern: ${{ parameters.knows_standard_pattern }}
-          uses_containers: ${{ parameters.uses_containers }}
-          uses_virtual_machines: ${{ parameters.uses_virtual_machines }}
           assigned_user: ${{ parameters.assigned_user }}
           assigned_cloud_architect: ${{ parameters.assigned_cloud_architect }}
           assignment_group: ${{ parameters.assignment_group }}
@@ -306,8 +369,18 @@ spec:
           support: ${{ parameters.support }}
           department_number: ${{ parameters.department_number }}
           data_class: ${{ parameters.data_class }}
+          criticality: ${{ parameters.criticality }}
+          risk_partner_nid: ${{ parameters.risk_partner_nid }}
+          domain: ${{ parameters.domain }}
+          ad_group_primary_approver: ${{ parameters.ad_group_primary_approver }}
+          ad_group_secondary_approver: ${{ parameters.ad_group_secondary_approver }}
+          ad_group_delegators: ${{ parameters.ad_group_delegators }}
           cloud_type: ${{ parameters.cloud_type }}
           is_public_facing: ${{ parameters.is_public_facing }}
+          knows_standard_pattern: ${{ parameters.knows_standard_pattern }}
+          standard_pattern: ${{ parameters.standard_pattern }}
+          uses_containers: ${{ parameters.uses_containers }}
+          uses_virtual_machines: ${{ parameters.uses_virtual_machines }}
           is_migrating_onprem: ${{ parameters.is_migrating_onprem }}
           app_type: ${{ parameters.app_type }}
           cots_type: ${{ parameters.cots_type }}
