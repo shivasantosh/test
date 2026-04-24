@@ -27,9 +27,7 @@ spec:
         - migration_type
         - has_app_web_server
         - assigned_user
-        - validate_assigned_user
         - assigned_cloud_architect
-        - validate_cloud_architect
         - isbia_risk_rating
         - data_class
         - criticality
@@ -82,7 +80,7 @@ spec:
           ui:options:
             button:
               title: Validate User
-            path: proxy/onboard-api/latest/ad/query
+            path: proxy/onboard-api/latest/ad/query/
             params:
               email: "{{parameters.assigned_user}}"
             setContextData:
@@ -109,7 +107,7 @@ spec:
           ui:options:
             button:
               title: Validate Architect
-            path: proxy/onboard-api/latest/ad/query
+            path: proxy/onboard-api/latest/ad/query/
             params:
               email: "{{parameters.assigned_cloud_architect}}"
             setContextData:
@@ -317,113 +315,66 @@ spec:
           title: Select Cloud Type
           enum:
             - Azure
-            - Aws
+            - AWS
+
+        deployment_division:
+          type: string
+          ui:field: SelectFieldFromApi
+          ui:options:
+            title: "Select deployment division? (this is where the infra will be built)"
+            placeholder: "Select division..."
+            path: proxy/onboard-api/latest/branch/
+            params:
+              urlPath: "onboarding/pattern-fitment"
+              sectionName: "section{{parameters.cloud_type}}"
+              value: "{{parameters.cloud_type}}"
+              key: "{{parameters.cloud_type}}"
+            arraySelector: "questionSet.0.answerOptions"
+            valueSelector: ""
+
+        replication_region:
+          type: string
+          ui:field: SelectFieldFromApi
+          ui:options:
+            title: Replication Region
+            placeholder: "Select region..."
+            path: proxy/onboard-api/latest/branch/
+            params:
+              urlPath: "onboarding/pattern-fitment"
+              sectionName: "section{{parameters.cloud_type}}"
+              value: "{{parameters.cloud_type}}"
+              key: "{{parameters.cloud_type}}"
+            arraySelector: "questionSet.1.answerOptions"
+            valueSelector: ""
+
+        same_approvers:
+          type: boolean
+          title: Will approvers be the same for all these applications?
+          default: true
+          ui:widget: checkbox
+
+        create_jira_tickets:
+          type: boolean
+          title: Do you want to create Jira tickets?
+          default: false
+          ui:widget: checkbox
 
       dependencies:
         cloud_type:
           oneOf:
-            # -------------------------------------------
-            # Azure selected
-            # -------------------------------------------
             - properties:
                 cloud_type:
                   enum:
-                    - Azure
-                deployment_division:
-                  type: string
-                  ui:field: SelectFieldFromApi
-                  ui:options:
-                    title: "Select deployment division? (this is where the infra will be built)"
-                    placeholder: "Select division..."
-                    path: proxy/onboard-api/latest/branch
-                    params:
-                      urlPath: "onboarding/pattern-fitment"
-                      sectionName: "sectionAzure"
-                      value: "Azure"
-                      key: "Azure"
-                    arraySelector: "questionSet.0.answerOptions"
-                    valueSelector: ""
-                replication_region:
-                  type: string
-                  ui:field: SelectFieldFromApi
-                  ui:options:
-                    title: Replication Region
-                    placeholder: "Select region..."
-                    path: proxy/onboard-api/latest/branch
-                    params:
-                      urlPath: "onboarding/pattern-fitment"
-                      sectionName: "sectionAzure"
-                      value: "Azure"
-                      key: "Azure"
-                    arraySelector: "questionSet.1.answerOptions"
-                    valueSelector: ""
-                same_approvers:
-                  type: boolean
-                  title: Will approvers be the same for all these applications?
-                  default: true
-                  ui:widget: checkbox
-                create_jira_tickets:
-                  type: boolean
-                  title: Do you want to create Jira tickets?
-                  default: false
-                  ui:widget: checkbox
-              required:
-                - deployment_division
-                - replication_region
-
-            # -------------------------------------------
-            # AWS selected
-            # -------------------------------------------
-            - properties:
-                cloud_type:
-                  enum:
-                    - Aws
-                deployment_division:
-                  type: string
-                  ui:field: SelectFieldFromApi
-                  ui:options:
-                    title: "Select deployment division? (this is where the infra will be built)"
-                    placeholder: "Select division..."
-                    path: proxy/onboard-api/latest/branch
-                    params:
-                      urlPath: "onboarding/pattern-fitment"
-                      sectionName: "sectionAWS"
-                      value: "AWS"
-                      key: "AWS"
-                    arraySelector: "questionSet.0.answerOptions"
-                    valueSelector: ""
-                replication_region:
-                  type: string
-                  ui:field: SelectFieldFromApi
-                  ui:options:
-                    title: Replication Region
-                    placeholder: "Select region..."
-                    path: proxy/onboard-api/latest/branch
-                    params:
-                      urlPath: "onboarding/pattern-fitment"
-                      sectionName: "sectionAWS"
-                      value: "AWS"
-                      key: "AWS"
-                    arraySelector: "questionSet.1.answerOptions"
-                    valueSelector: ""
+                    - AWS
                 database_required:
                   type: boolean
                   title: Database Required
                   default: false
                   ui:widget: checkbox
-                same_approvers:
-                  type: boolean
-                  title: Will approvers be the same for all these applications?
-                  default: true
-                  ui:widget: checkbox
-                create_jira_tickets:
-                  type: boolean
-                  title: Do you want to create Jira tickets?
-                  default: false
-                  ui:widget: checkbox
-              required:
-                - deployment_division
-                - replication_region
+            - properties:
+                cloud_type:
+                  enum:
+                    - Azure
 
         database_required:
           oneOf:
@@ -456,7 +407,7 @@ spec:
                   ui:options:
                     title: What is the DB Engine?
                     placeholder: "Select DB engine..."
-                    path: proxy/onboard-api/latest/branch
+                    path: proxy/onboard-api/latest/branch/
                     params:
                       urlPath: "onboarding/pattern-fitment"
                       sectionName: "sectionYesDb-DbType-Relational"
@@ -548,11 +499,7 @@ spec:
           migration_type: ${{ parameters.migration_type }}
           has_app_web_server: ${{ parameters.has_app_web_server }}
           assigned_user: ${{ parameters.assigned_user }}
-          validate_assigned_user: ${{ parameters.validate_assigned_user }}
-          validated_user_name: ${{ parameters.validated_user_display }}
           assigned_cloud_architect: ${{ parameters.assigned_cloud_architect }}
-          validate_cloud_architect: ${{ parameters.validate_cloud_architect }}
-          validated_architect_name: ${{ parameters.validated_architect_display }}
           assignment_group: ${{ parameters.assignment_group }}
           isbia_risk_rating: ${{ parameters.isbia_risk_rating }}
           support: ${{ parameters.support }}
