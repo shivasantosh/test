@@ -579,4 +579,15 @@ spec:
           replication_region: ${{ parameters.replication_region }}
           database_required: ${{ parameters.database_required }}
           database_type: ${{ parameters.database_type }}
-          db_engine: ${{ parameters.db_engin
+          db_engine: ${{ parameters.db_engine }}
+          same_approvers: ${{ parameters.same_approvers }}
+          jenkins_primary_approver: ${{ parameters.jenkins_primary_approver }}
+          jenkins_secondary_approver: ${{ parameters.jenkins_secondary_approver }}
+          terraform_primary_approver: ${{ parameters.terraform_primary_approver }}
+          terraform_secondary_approver: ${{ parameters.terraform_secondary_approver }}
+          os_access_primary_approver: ${{ parameters.os_access_primary_approver }}
+          os_access_secondary_approver: ${{ parameters.os_access_secondary_approver }}
+          create_jira_tickets: ${{ parameters.create_jira_tickets }}
+          jira_key: ${{ parameters.jira_key }}
+          jira_tags: ${{ parameters.jira_tags }}
+        apikey: ${{ parameters.token }}
