@@ -37,7 +37,6 @@ spec:
         - domain
         - ad_group_primary_approver
         - ad_group_secondary_approver
-        - cloud_type
         - is_public_facing
         - knows_standard_pattern
         - is_migrating_onprem
@@ -209,13 +208,6 @@ spec:
           title: Enter your AD Groups Delegators Separated with comma (Optional)
           ui:placeholder: "user1,user2,user3"
 
-        cloud_type:
-          type: string
-          title: Select Cloud Type
-          enum:
-            - Aws
-            - Azure
-
         is_public_facing:
           type: string
           title: Is your application public facing?
@@ -310,26 +302,124 @@ spec:
                     - true
 
     # ============================================
-    # STEP 2 - Approvers & Jira
+    # STEP 2 - Cloud Configuration, Approvers & Jira
     # ============================================
-    - title: "Step 2 - Approvers & Jira Configuration"
+    - title: "Step 2 - Cloud Configuration, Approvers & Jira"
       required:
+        - cloud_type
+        - deployment_division
+        - replication_region
         - same_approvers
         - create_jira_tickets
       properties:
-        same_approvers:
-          type: boolean
-          title: Will approvers be the same for all these applications?
-          default: true
-          ui:widget: checkbox
-
-        create_jira_tickets:
-          type: boolean
-          title: Do you want to create Jira tickets?
-          default: false
-          ui:widget: checkbox
+        cloud_type:
+          type: string
+          title: Select Cloud Type
+          enum:
+            - Azure
+            - Aws
 
       dependencies:
+        cloud_type:
+          oneOf:
+            # -------------------------------------------
+            # Azure selected
+            # -------------------------------------------
+            - properties:
+                cloud_type:
+                  enum:
+                    - Azure
+                deployment_division:
+                  type: string
+                  ui:field: SelectFieldFromApi
+                  ui:options:
+                    title: "Select deployment division? (this is where the infra will be built)"
+                    placeholder: "Select division..."
+                    path: proxy/onboard-api/latest/branch
+                    params:
+                      urlPath: "onboarding/pattern-fitment"
+                      sectionName: "sectionAzure"
+                      value: "Azure"
+                      key: "Azure"
+                    arraySelector: "questionSet.0.answerOptions"
+                    valueSelector: ""
+                replication_region:
+                  type: string
+                  ui:field: SelectFieldFromApi
+                  ui:options:
+                    title: Replication Region
+                    placeholder: "Select region..."
+                    path: proxy/onboard-api/latest/branch
+                    params:
+                      urlPath: "onboarding/pattern-fitment"
+                      sectionName: "sectionAzure"
+                      value: "Azure"
+                      key: "Azure"
+                    arraySelector: "questionSet.1.answerOptions"
+                    valueSelector: ""
+                same_approvers:
+                  type: boolean
+                  title: Will approvers be the same for all these applications?
+                  default: true
+                  ui:widget: checkbox
+                create_jira_tickets:
+                  type: boolean
+                  title: Do you want to create Jira tickets?
+                  default: false
+                  ui:widget: checkbox
+              required:
+                - deployment_division
+                - replication_region
+
+            # -------------------------------------------
+            # AWS selected
+            # -------------------------------------------
+            - properties:
+                cloud_type:
+                  enum:
+                    - Aws
+                deployment_division:
+                  type: string
+                  ui:field: SelectFieldFromApi
+                  ui:options:
+                    title: "Select deployment division? (this is where the infra will be built)"
+                    placeholder: "Select division..."
+                    path: proxy/onboard-api/latest/branch
+                    params:
+                      urlPath: "onboarding/pattern-fitment"
+                      sectionName: "sectionAWS"
+                      value: "AWS"
+                      key: "AWS"
+                    arraySelector: "questionSet.0.answerOptions"
+                    valueSelector: ""
+                replication_region:
+                  type: string
+                  ui:field: SelectFieldFromApi
+                  ui:options:
+                    title: Replication Region
+                    placeholder: "Select region..."
+                    path: proxy/onboard-api/latest/branch
+                    params:
+                      urlPath: "onboarding/pattern-fitment"
+                      sectionName: "sectionAWS"
+                      value: "AWS"
+                      key: "AWS"
+                    arraySelector: "questionSet.1.answerOptions"
+                    valueSelector: ""
+                same_approvers:
+                  type: boolean
+                  title: Will approvers be the same for all these applications?
+                  default: true
+                  ui:widget: checkbox
+                create_jira_tickets:
+                  type: boolean
+                  title: Do you want to create Jira tickets?
+                  default: false
+                  ui:widget: checkbox
+              required:
+                - deployment_division
+                - replication_region
+
         same_approvers:
           oneOf:
             - properties:
@@ -423,7 +513,6 @@ spec:
           ad_group_primary_approver: ${{ parameters.ad_group_primary_approver }}
           ad_group_secondary_approver: ${{ parameters.ad_group_secondary_approver }}
           ad_group_delegators: ${{ parameters.ad_group_delegators }}
-          cloud_type: ${{ parameters.cloud_type }}
           is_public_facing: ${{ parameters.is_public_facing }}
           knows_standard_pattern: ${{ parameters.knows_standard_pattern }}
           standard_pattern: ${{ parameters.standard_pattern }}
@@ -434,6 +523,9 @@ spec:
           cots_type: ${{ parameters.cots_type }}
           dev_framework: ${{ parameters.dev_framework }}
           app_architecture: ${{ parameters.app_architecture }}
+          cloud_type: ${{ parameters.cloud_type }}
+          deployment_division: ${{ parameters.deployment_division }}
+          replication_region: ${{ parameters.replication_region }}
           same_approvers: ${{ parameters.same_approvers }}
           jenkins_primary_approver: ${{ parameters.jenkins_primary_approver }}
           jenkins_secondary_approver: ${{ parameters.jenkins_secondary_approver }}
