@@ -406,6 +406,11 @@ spec:
                       key: "AWS"
                     arraySelector: "questionSet.1.answerOptions"
                     valueSelector: ""
+                database_required:
+                  type: boolean
+                  title: Database Required
+                  default: false
+                  ui:widget: checkbox
                 same_approvers:
                   type: boolean
                   title: Will approvers be the same for all these applications?
@@ -419,6 +424,52 @@ spec:
               required:
                 - deployment_division
                 - replication_region
+
+        database_required:
+          oneOf:
+            - properties:
+                database_required:
+                  enum:
+                    - true
+                database_type:
+                  type: string
+                  title: What type of database is required?
+                  enum:
+                    - Relational
+                    - Non-Relational
+              required:
+                - database_type
+            - properties:
+                database_required:
+                  enum:
+                    - false
+
+        database_type:
+          oneOf:
+            - properties:
+                database_type:
+                  enum:
+                    - Relational
+                db_engine:
+                  type: string
+                  ui:field: SelectFieldFromApi
+                  ui:options:
+                    title: What is the DB Engine?
+                    placeholder: "Select DB engine..."
+                    path: proxy/onboard-api/latest/branch
+                    params:
+                      urlPath: "onboarding/pattern-fitment"
+                      sectionName: "sectionYesDb-DbType-Relational"
+                      value: "relational"
+                      key: "relational"
+                    arraySelector: "questionSet.0.answerOptions"
+                    valueSelector: ""
+              required:
+                - db_engine
+            - properties:
+                database_type:
+                  enum:
+                    - Non-Relational
 
         same_approvers:
           oneOf:
@@ -526,14 +577,6 @@ spec:
           cloud_type: ${{ parameters.cloud_type }}
           deployment_division: ${{ parameters.deployment_division }}
           replication_region: ${{ parameters.replication_region }}
-          same_approvers: ${{ parameters.same_approvers }}
-          jenkins_primary_approver: ${{ parameters.jenkins_primary_approver }}
-          jenkins_secondary_approver: ${{ parameters.jenkins_secondary_approver }}
-          terraform_primary_approver: ${{ parameters.terraform_primary_approver }}
-          terraform_secondary_approver: ${{ parameters.terraform_secondary_approver }}
-          os_access_primary_approver: ${{ parameters.os_access_primary_approver }}
-          os_access_secondary_approver: ${{ parameters.os_access_secondary_approver }}
-          create_jira_tickets: ${{ parameters.create_jira_tickets }}
-          jira_key: ${{ parameters.jira_key }}
-          jira_tags: ${{ parameters.jira_tags }}
-        apikey: ${{ parameters.token }}
+          database_required: ${{ parameters.database_required }}
+          database_type: ${{ parameters.database_type }}
+          db_engine: ${{ parameters.db_engin
