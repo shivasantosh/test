@@ -13,6 +13,17 @@ metadata:
 spec:
   lifecycle: production
   output:
+    text:
+      - title: Onboarding Summary
+        content: |
+          | Field | Value |
+          |-------|-------|
+          | **Application ID** | ${{ parameters.application_id }} |
+          | **Migration Type** | ${{ parameters.migration_type }} |
+          | **Cloud Type** | ${{ parameters.cloud_type }} |
+          | **Deployment Division** | ${{ parameters.deployment_division }} |
+          | **Replication Region** | ${{ parameters.replication_region }} |
+          | **Bitbucket Project Key** | ${{ parameters.bitbucket_project_key }} |
     links:
       - title: Pipeline Details
         url: ${{ steps.trigger.output.PipelineUrl }}
@@ -485,6 +496,124 @@ spec:
                   enum:
                     - false
 
+    # ============================================
+    # STEP 3 - Infrastructure Configuration
+    # ============================================
+    - title: "Step 3 - Infrastructure Configuration"
+      required:
+        - bitbucket_project_key
+        - repositories
+      properties:
+        application_id_display:
+          type: string
+          title: Application ID
+          ui:readonly: true
+          default: "{{parameters.application_id}}"
+
+        cloud_type_display:
+          type: string
+          title: Cloud Type
+          ui:readonly: true
+          default: "{{parameters.cloud_type}}"
+
+        bitbucket_project_key:
+          type: string
+          title: Bitbucket Project Key
+          ui:placeholder: "Enter Bitbucket project key"
+
+        repositories:
+          type: array
+          title: Repository & VM Configuration
+          description: "Click 'Add item' to add repository configurations"
+          minItems: 1
+          ui:options:
+            addable: true
+            removable: true
+            orderable: true
+          items:
+            type: object
+            required:
+              - repository_name
+              - vm_size
+              - vm_count
+              - os_type
+              - disk_size_gb
+              - storage_type
+            properties:
+              repository_name:
+                type: string
+                title: Repository Name
+                ui:placeholder: "my-service-repo"
+
+              vm_size:
+                type: string
+                title: What is VM Size?
+                enum:
+                  - Small
+                  - Medium
+                  - Large
+
+              vm_count:
+                type: integer
+                title: How many VMs are required?
+                default: 1
+                ui:placeholder: "1"
+
+              os_type:
+                type: string
+                title: Operating System
+                enum:
+                  - Windows
+                  - Linux
+
+              disk_size_gb:
+                type: string
+                title: Disk Size (GB)
+                enum:
+                  - "32"
+                  - "64"
+                  - "128"
+
+              storage_type:
+                type: string
+                title: What type of storage?
+                enum:
+                  - StandardSSD_LRS
+
+              support_autoscaling:
+                type: boolean
+                title: Support Autoscaling
+                default: false
+                ui:widget: checkbox
+
+            dependencies:
+              support_autoscaling:
+                oneOf:
+                  - properties:
+                      support_autoscaling:
+                        enum:
+                          - true
+                      cpu_threshold_scale_up:
+                        type: integer
+                        title: CPU Threshold for Scale Up (%)
+                        ui:placeholder: "80"
+                      cpu_threshold_scale_down:
+                        type: integer
+                        title: CPU Threshold for Scale Down (%)
+                        ui:placeholder: "20"
+                      max_instances:
+                        type: integer
+                        title: Maximum Number of Instances for Scaling
+                        ui:placeholder: "10"
+                    required:
+                      - cpu_threshold_scale_up
+                      - cpu_threshold_scale_down
+                      - max_instances
+                  - properties:
+                      support_autoscaling:
+                        enum:
+                          - false
+
   # ============================================
   # ACTIONS
   # ============================================
@@ -537,4 +666,7 @@ spec:
           create_jira_tickets: ${{ parameters.create_jira_tickets }}
           jira_key: ${{ parameters.jira_key }}
           jira_tags: ${{ parameters.jira_tags }}
+          bitbucket_project_key: ${{ parameters.bitbucket_project_key }}
+          repositories: ${{ parameters.repositories }}
         apikey: ${{ parameters.token }}
+        showOutputVariables: true
