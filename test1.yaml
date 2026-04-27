@@ -1,6 +1,6 @@
 pipeline:
-  name: v2-Dynamic GitHub Repository Provisioner
-  identifier: createrepo_v2
+  name: v1-Dynamic GitHub Repository Provisioner
+  identifier: createrepo
   projectIdentifier: cfgIDPproject
   orgIdentifier: cfg_sandbox_dev
   tags: {}
@@ -180,6 +180,32 @@ pipeline:
                           - Unknown
                         action:
                           type: MarkAsFailure
+
+              - step:
+                  type: ShellScript
+                  name: LogError
+                  identifier: LogError_validate_repo
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          echo "=== Stage Failed: Validate Repo ==="
+                          echo "ValidateCreateRepoRequest Response: <+execution.steps.ValidateCreateRepoRequest.output.outputVariables.responseBody>"
+                          echo "==================================="
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+                  when:
+                    stageStatus: Failure
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - Unknown
+                        action:
+                          type: Ignore
         tags: {}
 
     # ============================================
@@ -275,6 +301,33 @@ pipeline:
                             onRetryFailure:
                               action:
                                 type: MarkAsFailure
+
+              - step:
+                  type: ShellScript
+                  name: LogError
+                  identifier: LogError_validate_adgroups
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          echo "=== Stage Failed: Validate and Create AD Groups ==="
+                          echo "ValidateAdGroups Response: <+execution.steps.ValidateAdGroups.output.outputVariables.responseBody>"
+                          echo "CreateAdGroups Response: <+execution.steps.CreateAdGroups.output.outputVariables.responseBody>"
+                          echo "==================================="
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+                  when:
+                    stageStatus: Failure
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - Unknown
+                        action:
+                          type: Ignore
         tags: {}
 
     # ============================================
@@ -480,6 +533,36 @@ pipeline:
                   when:
                     stageStatus: Success
                     condition: <+pipeline.variables.repositoryType> == "bifrost" || <+pipeline.variables.repositoryType> == "native-terraform"
+
+              - step:
+                  type: ShellScript
+                  name: LogError
+                  identifier: LogError_create_repo
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          echo "=== Stage Failed: Create Repo ==="
+                          echo "CreateRepo Response: <+execution.steps.CreateRepo.output.outputVariables.responseBody>"
+                          echo "CreateRepoInProvider Response: <+execution.steps.CreateRepoInProvider.output.outputVariables.responseBody>"
+                          echo "AddTemplateFiles Response: <+execution.steps.AddTemplateFiles.output.outputVariables.responseBody>"
+                          echo "AddMetaData Response: <+execution.steps.AddMetaData.output.outputVariables.responseBody>"
+                          echo "Webhook Response: <+execution.steps.Webhook.output.outputVariables.responseBody>"
+                          echo "==================================="
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+                  when:
+                    stageStatus: Failure
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - Unknown
+                        action:
+                          type: Ignore
         tags: {}
 
     # ============================================
@@ -516,6 +599,32 @@ pipeline:
                             "repoId": "<+pipeline.stages.create_repo.spec.execution.steps.CreateRepo.output.outputVariables.catalogId>"
                           }
                         assertion: <+httpResponseCode> == 200
+
+              - step:
+                  type: ShellScript
+                  name: LogError
+                  identifier: LogError_teams
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          echo "=== Stage Failed: Teams ==="
+                          echo "AddPermissions Response: <+execution.steps.AddPermissions.output.outputVariables.responseBody>"
+                          echo "==================================="
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+                  when:
+                    stageStatus: Failure
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - Unknown
+                        action:
+                          type: Ignore
         tags: {}
 
     # ============================================
@@ -544,6 +653,32 @@ pipeline:
                             "repoId": "<+pipeline.stages.create_repo.spec.execution.steps.CreateRepo.output.outputVariables.catalogId>"
                           }
                         assertion: <+httpResponseCode> == 200
+
+              - step:
+                  type: ShellScript
+                  name: LogError
+                  identifier: LogError_jenkins
+                  spec:
+                    shell: Bash
+                    executionTarget: {}
+                    source:
+                      type: Inline
+                      spec:
+                        script: |-
+                          echo "=== Stage Failed: Jenkins ==="
+                          echo "TriggerJenkins Response: <+execution.steps.TriggerJenkins.output.outputVariables.responseBody>"
+                          echo "==================================="
+                    environmentVariables: []
+                    outputVariables: []
+                  timeout: 10m
+                  when:
+                    stageStatus: Failure
+                  failureStrategies:
+                    - onFailure:
+                        errors:
+                          - Unknown
+                        action:
+                          type: Ignore
         tags: {}
 
     # ============================================
@@ -579,7 +714,7 @@ pipeline:
                     requestBody: |-
                       {
                         "eventName": "REPO_PROVISIONING_FAILED",
-                        "message": "Repository provisioning failed for <+pipeline.variables.repoName> (SysID: <+pipeline.variables.sysId>, ProjectKey: <+pipeline.variables.projectKey>). Pipeline: <+pipeline.name>, Execution: <+pipeline.executionId>",
+                        "message": "Repository provisioning failed for <+pipeline.variables.repoName> (SysID: <+pipeline.variables.sysId>, ProjectKey: <+pipeline.variables.projectKey>). Pipeline: <+pipeline.name>, Execution: <+pipeline.executionId>. Check execution logs for error details.",
                         "receiver": "<+pipeline.variables.notificationReceiver>",
                         "sender": "<+pipeline.variables.notificationSender>"
                       }
