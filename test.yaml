@@ -1,7 +1,7 @@
 apiVersion: harness.io/v1
 kind: Workflow
-name: Application Onboarding
-identifier: application_onboarding
+name: test-onboarding-form
+identifier: testonboardingform
 type: service
 owner: platform-team
 metadata:
@@ -622,51 +622,19 @@ spec:
             type: object
             required:
               - repository_name
-              - instance_size
-              - instance_count
               - os_type
-              - disk_size_gb
-              - storage_type
-              - load_balancer
             properties:
               repository_name:
                 type: string
                 title: Repository Name
                 ui:placeholder: "my-service-repo"
 
-              instance_size:
-                type: string
-                title: Instance Size
-                enum:
-                  - Medium
-                  - Large
-
-              instance_count:
-                type: integer
-                title: How many Instances are required?
-                default: 1
-                ui:placeholder: "1"
-
               os_type:
                 type: string
                 title: Operating System
                 enum:
-                  - Windows
                   - Linux
-
-              disk_size_gb:
-                type: string
-                title: Disk Size (GB)
-                enum:
-                  - "32"
-                  - "64"
-                  - "128"
-
-              storage_type:
-                type: string
-                title: What type of storage?
-                enum:
-                  - StandardSSD_LRS
+                  - Windows
 
               use_graviton:
                 type: boolean
@@ -680,78 +648,238 @@ spec:
                 default: false
                 ui:widget: checkbox
 
-              load_balancer:
-                type: string
-                title: Do you need a load balancer?
-                default: None
-                enum:
-                  - None
-                  - ALB
-                  - NLB
+              public_facing_tier:
+                type: boolean
+                title: Will this tier be public facing?
+                default: false
+                ui:widget: checkbox
 
+              # ── Lambda Configuration ──
+              lambda_config:
+                type: object
+                title: "Lambda Configuration"
+                description: "Fill only if Lambda is required"
+                properties:
+                  function_name:
+                    type: string
+                    title: Please provide Lambda function name
+                    ui:placeholder: "my-lambda-function"
+                  function_handler:
+                    type: string
+                    title: Please provide Lambda function handler
+                    ui:placeholder: "index.handler"
+                  memory_size:
+                    type: string
+                    title: Please provide Lambda memory size
+                    enum:
+                      - "256"
+                      - "512"
+                      - "1024"
+                  function_timeout:
+                    type: string
+                    title: Please provide Lambda function timeout
+                    ui:placeholder: "30"
+                  function_runtime:
+                    type: string
+                    title: Please provide Lambda function runtime
+                    enum:
+                      - nodejs20.x
+                      - nodejs18.x
+                      - nodejs16.x
+                      - python3.12
+                      - python3.11
+                      - python3.10
+                      - python3.9
+                      - python3.8
+                      - java21
+                      - java17
+                      - java11
+                      - java8
+                      - dotnet8
+                      - dotnet6
+                      - ruby3.2
+                      - ruby2.7
+
+              # ── Load Balancer Configuration ──
+              load_balancer_config:
+                type: object
+                title: "Load Balancer Configuration"
+                properties:
+                  load_balancer_type:
+                    type: string
+                    title: Do you need a load balancer?
+                    default: None
+                    enum:
+                      - None
+                      - ALB
+                      - NLB
+                  lb_protocol:
+                    type: string
+                    title: What is your load balancer protocol?
+                    ui:placeholder: "HTTPS"
+                  lb_port:
+                    type: string
+                    title: What is your load balancer port?
+                    ui:placeholder: "443"
+                  target_instance_port:
+                    type: string
+                    title: What is your target instance port to send traffic?
+                    ui:placeholder: "8080"
+                  health_check_path:
+                    type: string
+                    title: What is your health check path?
+                    ui:placeholder: "/health"
+                  cert_prefix:
+                    type: string
+                    title: What should the cert prefix be?
+                    description: "Fill only if you need us to create a user-friendly DNS that can be used to access your app"
+                    ui:placeholder: "my-app"
+                  cert_prefix_dr:
+                    type: string
+                    title: What should the cert prefix for DR be?
+                    ui:placeholder: "my-app-dr"
+                  datadog_synthetic_path:
+                    type: string
+                    title: "Would you like to setup Datadog synthetic monitoring to check your endpoint? What is the path to check?"
+                    ui:placeholder: "/health"
+
+              # ── EFS Configuration ──
+              efs_config:
+                type: object
+                title: "EFS Configuration"
+                properties:
+                  throughput_type:
+                    type: string
+                    title: What is the type of EFS throughput do you require?
+                    enum:
+                      - Elastic
+                      - Bursting
+                      - Provisioned
+                  provisioned_throughput:
+                    type: string
+                    title: Provisioned throughput in MB/s
+                    description: "If you selected Provisioned, enter provisioned throughput in MB/s for EFS"
+                    ui:placeholder: "128"
+                  performance_type:
+                    type: string
+                    title: What type of EFS performance do you require?
+                    enum:
+                      - General Purpose
+                      - MaxIO
+
+              # ── ElastiCache Redis Configuration ──
+              elasticache_config:
+                type: object
+                title: "ElastiCache Redis Configuration"
+                properties:
+                  node_type:
+                    type: string
+                    title: What is the node type of ElastiCache Redis?
+                    enum:
+                      - cache.t3.micro
+                      - cache.t3.small
+                      - cache.t3.medium
+                      - cache.m5.large
+                      - cache.m5.xlarge
+                      - cache.m5.2xlarge
+                  cluster_count:
+                    type: integer
+                    title: How many clusters are required for ElastiCache Redis?
+                    ui:placeholder: "2"
+                  engine_version:
+                    type: string
+                    title: What is the engine version?
+                    ui:placeholder: "7.0"
+                  port:
+                    type: string
+                    title: What is the port for ElastiCache?
+                    ui:placeholder: "6379"
+                  maintenance_window:
+                    type: string
+                    title: What is the maintenance window for this? (weekday and time range)
+                    ui:placeholder: "sun:05:00-sun:06:00"
+                  snapshot_window:
+                    type: string
+                    title: What is the snapshot window? (time range)
+                    ui:placeholder: "03:00-04:00"
+                  enable_failover:
+                    type: boolean
+                    title: Do you want to enable automatic failover?
+                    default: false
+                    ui:widget: checkbox
+                  enable_multi_az:
+                    type: boolean
+                    title: Do you want to enable Multi-AZ?
+                    default: false
+                    ui:widget: checkbox
+
+              # ── FSX Configuration ──
+              fsx_config:
+                type: object
+                title: "FSX Configuration"
+                properties:
+                  storage_size_gb:
+                    type: integer
+                    title: What is the storage size for FSX in GB?
+                    description: "You can always increase later"
+                    ui:placeholder: "100"
+                  throughput_capacity:
+                    type: string
+                    title: What is the throughput capacity MB/s?
+                    ui:placeholder: "128"
+
+              # ── S3 Only (flat, for dependency) ──
+              s3_only:
+                type: boolean
+                title: "── S3 Only ──"
+                description: "If checked, instance fields are not required"
+                default: false
+                ui:widget: checkbox
+
+              # ── Autoscaling (flat, for dependency) ──
               support_autoscaling:
                 type: boolean
-                title: Support Autoscaling
+                title: "── Support Autoscaling ──"
                 default: false
                 ui:widget: checkbox
 
             dependencies:
-              load_balancer:
+              s3_only:
                 oneOf:
                   - properties:
-                      load_balancer:
+                      s3_only:
                         enum:
-                          - ALB
-                      listener_protocol:
+                          - false
+                      instance_size:
                         type: string
-                        title: What is the listener protocol?
-                        ui:placeholder: "HTTPS"
-                      listener_port:
+                        title: Instance Size
+                        enum:
+                          - Medium
+                          - Large
+                      instance_count:
+                        type: integer
+                        title: How many Instances are required?
+                        default: 1
+                        ui:placeholder: "1"
+                      attached_volume_type:
                         type: string
-                        title: Listener port
-                        ui:placeholder: "443"
-                      traffic_port:
-                        type: string
-                        title: Send traffic port
-                        ui:placeholder: "8080"
-                      health_check_path:
-                        type: string
-                        title: Health check path for HTML
-                        ui:placeholder: "/health"
+                        title: Attached Volume Type of Storage
+                        enum:
+                          - gp3
+                          - io2
+                      attached_volume_size_gb:
+                        type: integer
+                        title: Attached Volume Size in GB
+                        ui:placeholder: "50"
                     required:
-                      - listener_protocol
-                      - listener_port
-                      - traffic_port
-                      - health_check_path
+                      - instance_size
+                      - instance_count
+                      - attached_volume_type
+                      - attached_volume_size_gb
                   - properties:
-                      load_balancer:
+                      s3_only:
                         enum:
-                          - NLB
-                      listener_protocol:
-                        type: string
-                        title: What is the listener protocol?
-                        ui:placeholder: "TCP"
-                      listener_port:
-                        type: string
-                        title: Listener port
-                        ui:placeholder: "443"
-                      traffic_port:
-                        type: string
-                        title: Send traffic port
-                        ui:placeholder: "8080"
-                      health_check_path:
-                        type: string
-                        title: Health check path for HTML
-                        ui:placeholder: "/health"
-                    required:
-                      - listener_protocol
-                      - listener_port
-                      - traffic_port
-                      - health_check_path
-                  - properties:
-                      load_balancer:
-                        enum:
-                          - None
+                          - true
 
               support_autoscaling:
                 oneOf:
