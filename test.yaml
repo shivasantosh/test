@@ -497,72 +497,91 @@ spec:
                     - false
 
     # ============================================
-    # STEP 3 - S3 Details
+    # STEP 3 - S3 / Cloud Details
     # ============================================
-    - title: "Step 3 - S3 Details"
-      required:
-        - s3_bucket
-        - internal_vpc
-        - ingress_vpc
+    - title: "Step 3 - S3 / Cloud Details"
       properties:
-        s3_bucket:
-          type: boolean
-          title: Do you need S3?
-          default: true
-          ui:widget: checkbox
-
-        enterprise_applications:
-          type: array
-          title: "Please select one or more if your application will use the following enterprise application (optional)"
-          items:
-            type: string
-            enum:
-              - API Connect
-              - Data Power (OMZ)
-              - Autosys
-              - IIB-MO
-              - OcpSharedToDB
-              - OpCotsToDB
-              - EksSharedToDB
-          uniqueItems: true
-          ui:widget: checkboxes
-
-        addons:
-          type: array
-          title: "Please select one or more if your application will use the following addons"
-          items:
-            type: string
-            enum:
-              - appstream
-              - athena
-              - cf-lex
-              - cloudwatch
-              - comprehend
-              - datasync
-              - elasticache
-              - eventbridge
-              - lidk
-              - kinesis-firehose
-              - step-functions
-          uniqueItems: true
-          ui:widget: checkboxes
-
-        internal_vpc:
+        cloud_type_display:
           type: string
-          title: "Please select a specific internal VPC. If you do not know, go with default"
-          default: default
-          enum:
-            - cfg-commercialconnect-p-2-us-east-1-vpc-connect
-            - default
+          title: Cloud Type
+          ui:readonly: true
+          default: "{{parameters.cloud_type}}"
 
-        ingress_vpc:
+        cloud_type_hidden:
           type: string
-          title: "Please select a specific ingress VPC. If you do not know, go with default"
-          default: default
-          enum:
-            - default
+          ui:widget: hidden
+          default: "{{parameters.cloud_type}}"
 
       dependencies:
+        cloud_type_hidden:
+          oneOf:
+            - properties:
+                cloud_type_hidden:
+                  enum:
+                    - AWS
+                s3_bucket:
+                  type: boolean
+                  title: Do you need S3?
+                  default: true
+                  ui:widget: checkbox
+                enterprise_applications:
+                  type: array
+                  title: "Please select one or more if your application will use the following enterprise application (optional)"
+                  items:
+                    type: string
+                    enum:
+                      - API Connect
+                      - Data Power (OMZ)
+                      - Autosys
+                      - IIB-MO
+                      - OcpSharedToDB
+                      - OpCotsToDB
+                      - EksSharedToDB
+                  uniqueItems: true
+                  ui:widget: checkboxes
+                addons:
+                  type: array
+                  title: "Please select one or more if your application will use the following addons"
+                  items:
+                    type: string
+                    enum:
+                      - appstream
+                      - athena
+                      - cf-lex
+                      - cloudwatch
+                      - comprehend
+                      - datasync
+                      - elasticache
+                      - eventbridge
+                      - lidk
+                      - kinesis-firehose
+                      - step-functions
+                  uniqueItems: true
+                  ui:widget: checkboxes
+                internal_vpc:
+                  type: string
+                  title: "Please select a specific internal VPC. If you do not know, go with default"
+                  default: default
+                  enum:
+                    - cfg-commercialconnect-p-2-us-east-1-vpc-connect
+                    - default
+                ingress_vpc:
+                  type: string
+                  title: "Please select a specific ingress VPC. If you do not know, go with default"
+                  default: default
+                  enum:
+                    - default
+
+            - properties:
+                cloud_type_hidden:
+                  enum:
+                    - Azure
+                azure_info:
+                  type: string
+                  title: "ℹ️ Information"
+                  ui:readonly: true
+                  default: "S3 and related configurations are not applicable for Azure. Click Next to proceed to Infrastructure Configuration."
+
         s3_bucket:
           oneOf:
             - properties:
@@ -590,7 +609,6 @@ spec:
     - title: "Step 4 - Infrastructure Configuration"
       required:
         - bitbucket_project_key
-        - repositories
       properties:
         application_id_display:
           type: string
@@ -609,319 +627,504 @@ spec:
           title: Bitbucket Project Key
           ui:placeholder: "Enter Bitbucket project key"
 
-        repositories:
-          type: array
-          title: Repository & Instance Configuration
-          description: "Click 'Add item' to add repository configurations"
-          minItems: 1
-          ui:options:
-            addable: true
-            removable: true
-            orderable: true
-          items:
-            type: object
-            required:
-              - repository_name
-              - os_type
-            properties:
-              repository_name:
-                type: string
-                title: Repository Name
-                ui:placeholder: "my-service-repo"
+        cloud_type_hidden:
+          type: string
+          ui:widget: hidden
+          default: "{{parameters.cloud_type}}"
 
-              os_type:
-                type: string
-                title: Operating System
-                enum:
-                  - Linux
-                  - Windows
-
-              use_graviton:
-                type: boolean
-                title: Do you want to use Graviton?
-                default: false
-                ui:widget: checkbox
-
-              require_static_ip:
-                type: boolean
-                title: Do you require static IP?
-                default: false
-                ui:widget: checkbox
-
-              public_facing_tier:
-                type: boolean
-                title: Will this tier be public facing?
-                default: false
-                ui:widget: checkbox
-
-              # ── Lambda Configuration ──
-              lambda_config:
-                type: object
-                title: "Lambda Configuration"
-                description: "Fill only if Lambda is required"
-                properties:
-                  function_name:
-                    type: string
-                    title: Please provide Lambda function name
-                    ui:placeholder: "my-lambda-function"
-                  function_handler:
-                    type: string
-                    title: Please provide Lambda function handler
-                    ui:placeholder: "index.handler"
-                  memory_size:
-                    type: string
-                    title: Please provide Lambda memory size
-                    enum:
-                      - "256"
-                      - "512"
-                      - "1024"
-                  function_timeout:
-                    type: string
-                    title: Please provide Lambda function timeout
-                    ui:placeholder: "30"
-                  function_runtime:
-                    type: string
-                    title: Please provide Lambda function runtime
-                    enum:
-                      - nodejs20.x
-                      - nodejs18.x
-                      - nodejs16.x
-                      - python3.12
-                      - python3.11
-                      - python3.10
-                      - python3.9
-                      - python3.8
-                      - java21
-                      - java17
-                      - java11
-                      - java8
-                      - dotnet8
-                      - dotnet6
-                      - ruby3.2
-                      - ruby2.7
-
-              # ── Load Balancer Configuration ──
-              load_balancer_config:
-                type: object
-                title: "Load Balancer Configuration"
-                properties:
-                  load_balancer_type:
-                    type: string
-                    title: Do you need a load balancer?
-                    default: None
-                    enum:
-                      - None
-                      - ALB
-                      - NLB
-                  lb_protocol:
-                    type: string
-                    title: What is your load balancer protocol?
-                    ui:placeholder: "HTTPS"
-                  lb_port:
-                    type: string
-                    title: What is your load balancer port?
-                    ui:placeholder: "443"
-                  target_instance_port:
-                    type: string
-                    title: What is your target instance port to send traffic?
-                    ui:placeholder: "8080"
-                  health_check_path:
-                    type: string
-                    title: What is your health check path?
-                    ui:placeholder: "/health"
-                  cert_prefix:
-                    type: string
-                    title: What should the cert prefix be?
-                    description: "Fill only if you need us to create a user-friendly DNS that can be used to access your app"
-                    ui:placeholder: "my-app"
-                  cert_prefix_dr:
-                    type: string
-                    title: What should the cert prefix for DR be?
-                    ui:placeholder: "my-app-dr"
-                  datadog_synthetic_path:
-                    type: string
-                    title: "Would you like to setup Datadog synthetic monitoring to check your endpoint? What is the path to check?"
-                    ui:placeholder: "/health"
-
-              # ── EFS Configuration ──
-              efs_config:
-                type: object
-                title: "EFS Configuration"
-                properties:
-                  throughput_type:
-                    type: string
-                    title: What is the type of EFS throughput do you require?
-                    enum:
-                      - Elastic
-                      - Bursting
-                      - Provisioned
-                  provisioned_throughput:
-                    type: string
-                    title: Provisioned throughput in MB/s
-                    description: "If you selected Provisioned, enter provisioned throughput in MB/s for EFS"
-                    ui:placeholder: "128"
-                  performance_type:
-                    type: string
-                    title: What type of EFS performance do you require?
-                    enum:
-                      - General Purpose
-                      - MaxIO
-
-              # ── ElastiCache Redis Configuration ──
-              elasticache_config:
-                type: object
-                title: "ElastiCache Redis Configuration"
-                properties:
-                  node_type:
-                    type: string
-                    title: What is the node type of ElastiCache Redis?
-                    enum:
-                      - cache.t3.micro
-                      - cache.t3.small
-                      - cache.t3.medium
-                      - cache.m5.large
-                      - cache.m5.xlarge
-                      - cache.m5.2xlarge
-                  cluster_count:
-                    type: integer
-                    title: How many clusters are required for ElastiCache Redis?
-                    ui:placeholder: "2"
-                  engine_version:
-                    type: string
-                    title: What is the engine version?
-                    ui:placeholder: "7.0"
-                  port:
-                    type: string
-                    title: What is the port for ElastiCache?
-                    ui:placeholder: "6379"
-                  maintenance_window:
-                    type: string
-                    title: What is the maintenance window for this? (weekday and time range)
-                    ui:placeholder: "sun:05:00-sun:06:00"
-                  snapshot_window:
-                    type: string
-                    title: What is the snapshot window? (time range)
-                    ui:placeholder: "03:00-04:00"
-                  enable_failover:
-                    type: boolean
-                    title: Do you want to enable automatic failover?
-                    default: false
-                    ui:widget: checkbox
-                  enable_multi_az:
-                    type: boolean
-                    title: Do you want to enable Multi-AZ?
-                    default: false
-                    ui:widget: checkbox
-
-              # ── FSX Configuration ──
-              fsx_config:
-                type: object
-                title: "FSX Configuration"
-                properties:
-                  storage_size_gb:
-                    type: integer
-                    title: What is the storage size for FSX in GB?
-                    description: "You can always increase later"
-                    ui:placeholder: "100"
-                  throughput_capacity:
-                    type: string
-                    title: What is the throughput capacity MB/s?
-                    ui:placeholder: "128"
-
-              # ── S3 Only (flat, for dependency) ──
-              s3_only:
-                type: boolean
-                title: "── S3 Only ──"
-                description: "If checked, instance fields are not required"
-                default: false
-                ui:widget: checkbox
-
-              # ── Autoscaling (flat, for dependency) ──
-              support_autoscaling:
-                type: boolean
-                title: "── Support Autoscaling ──"
-                default: false
-                ui:widget: checkbox
-
-            dependencies:
-              s3_only:
-                oneOf:
-                  - properties:
-                      s3_only:
-                        enum:
-                          - false
-                      instance_size:
+      dependencies:
+        cloud_type_hidden:
+          oneOf:
+            # ── AWS ──
+            - properties:
+                cloud_type_hidden:
+                  enum:
+                    - AWS
+                aws_repositories:
+                  type: array
+                  title: Repository & Instance Configuration (AWS)
+                  description: "Click 'Add item' to add repository configurations"
+                  minItems: 1
+                  ui:options:
+                    addable: true
+                    removable: true
+                    orderable: true
+                  items:
+                    type: object
+                    required:
+                      - repository_name
+                      - os_type
+                    properties:
+                      repository_name:
                         type: string
-                        title: Instance Size
+                        title: Repository Name
+                        ui:placeholder: "my-service-repo"
+
+                      os_type:
+                        type: string
+                        title: Operating System
                         enum:
+                          - Linux
+                          - Windows
+
+                      use_graviton:
+                        type: boolean
+                        title: Do you want to use Graviton?
+                        default: false
+                        ui:widget: checkbox
+
+                      require_static_ip:
+                        type: boolean
+                        title: Do you require static IP?
+                        default: false
+                        ui:widget: checkbox
+
+                      public_facing_tier:
+                        type: boolean
+                        title: Will this tier be public facing?
+                        default: false
+                        ui:widget: checkbox
+
+                      # ── Lambda Configuration ──
+                      lambda_config:
+                        type: object
+                        title: "Lambda Configuration"
+                        description: "If No is selected, below fields can be left empty"
+                        properties:
+                          need_lambda:
+                            type: string
+                            title: Do you need Lambda?
+                            default: "No"
+                            enum:
+                              - "Yes"
+                              - "No"
+                          function_name:
+                            type: string
+                            title: Please provide Lambda function name
+                            ui:placeholder: "my-lambda-function"
+                          function_handler:
+                            type: string
+                            title: Please provide Lambda function handler
+                            ui:placeholder: "index.handler"
+                          memory_size:
+                            type: string
+                            title: Please provide Lambda memory size
+                            enum:
+                              - "256"
+                              - "512"
+                              - "1024"
+                          function_timeout:
+                            type: string
+                            title: Please provide Lambda function timeout
+                            ui:placeholder: "30"
+                          function_runtime:
+                            type: string
+                            title: Please provide Lambda function runtime
+                            enum:
+                              - nodejs20.x
+                              - nodejs18.x
+                              - nodejs16.x
+                              - python3.12
+                              - python3.11
+                              - python3.10
+                              - python3.9
+                              - python3.8
+                              - java21
+                              - java17
+                              - java11
+                              - java8
+                              - dotnet8
+                              - dotnet6
+                              - ruby3.2
+                              - ruby2.7
+
+                      # ── Load Balancer Configuration ──
+                      load_balancer_config:
+                        type: object
+                        title: "Load Balancer Configuration"
+                        description: "If None is selected, below fields can be left empty"
+                        properties:
+                          load_balancer_type:
+                            type: string
+                            title: Do you need a load balancer?
+                            default: None
+                            enum:
+                              - None
+                              - ALB
+                              - NLB
+                          lb_protocol:
+                            type: string
+                            title: What is your load balancer protocol?
+                            ui:placeholder: "HTTPS"
+                          lb_port:
+                            type: string
+                            title: What is your load balancer port?
+                            ui:placeholder: "443"
+                          target_instance_port:
+                            type: string
+                            title: What is your target instance port to send traffic?
+                            ui:placeholder: "8080"
+                          health_check_path:
+                            type: string
+                            title: What is your health check path?
+                            ui:placeholder: "/health"
+                          cert_prefix:
+                            type: string
+                            title: What should the cert prefix be?
+                            description: "Fill only if you need us to create a user-friendly DNS to access your app"
+                            ui:placeholder: "my-app"
+                          cert_prefix_dr:
+                            type: string
+                            title: What should the cert prefix for DR be?
+                            ui:placeholder: "my-app-dr"
+                          datadog_synthetic_path:
+                            type: string
+                            title: "Would you like to setup Datadog synthetic monitoring? What is the path to check?"
+                            ui:placeholder: "/health"
+
+                      # ── EFS Configuration ──
+                      efs_config:
+                        type: object
+                        title: "EFS Configuration"
+                        description: "If No is selected, below fields can be left empty"
+                        properties:
+                          need_efs:
+                            type: string
+                            title: Do you need EFS?
+                            default: "No"
+                            enum:
+                              - "Yes"
+                              - "No"
+                          throughput_type:
+                            type: string
+                            title: What is the type of EFS throughput do you require?
+                            enum:
+                              - Elastic
+                              - Bursting
+                              - Provisioned
+                          provisioned_throughput:
+                            type: string
+                            title: Provisioned throughput in MB/s
+                            description: "If you selected Provisioned, enter provisioned throughput in MB/s for EFS"
+                            ui:placeholder: "128"
+                          performance_type:
+                            type: string
+                            title: What type of EFS performance do you require?
+                            enum:
+                              - General Purpose
+                              - MaxIO
+
+                      # ── ElastiCache Redis Configuration ──
+                      elasticache_config:
+                        type: object
+                        title: "ElastiCache Redis Configuration"
+                        description: "If No is selected, below fields can be left empty"
+                        properties:
+                          need_elasticache:
+                            type: string
+                            title: Do you need ElastiCache Redis?
+                            default: "No"
+                            enum:
+                              - "Yes"
+                              - "No"
+                          node_type:
+                            type: string
+                            title: What is the node type of ElastiCache Redis?
+                            enum:
+                              - cache.t3.micro
+                              - cache.t3.small
+                              - cache.t3.medium
+                              - cache.m5.large
+                              - cache.m5.xlarge
+                              - cache.m5.2xlarge
+                          cluster_count:
+                            type: integer
+                            title: How many clusters are required for ElastiCache Redis?
+                            ui:placeholder: "2"
+                          engine_version:
+                            type: string
+                            title: What is the engine version?
+                            ui:placeholder: "7.0"
+                          port:
+                            type: string
+                            title: What is the port for ElastiCache?
+                            ui:placeholder: "6379"
+                          maintenance_window:
+                            type: string
+                            title: What is the maintenance window? (weekday and time range)
+                            ui:placeholder: "sun:05:00-sun:06:00"
+                          snapshot_window:
+                            type: string
+                            title: What is the snapshot window? (time range)
+                            ui:placeholder: "03:00-04:00"
+                          enable_failover:
+                            type: boolean
+                            title: Do you want to enable automatic failover?
+                            default: false
+                            ui:widget: checkbox
+                          enable_multi_az:
+                            type: boolean
+                            title: Do you want to enable Multi-AZ?
+                            default: false
+                            ui:widget: checkbox
+
+                      # ── FSX Configuration ──
+                      fsx_config:
+                        type: object
+                        title: "FSX Configuration"
+                        description: "If No is selected, below fields can be left empty"
+                        properties:
+                          need_fsx:
+                            type: string
+                            title: Do you need FSX?
+                            default: "No"
+                            enum:
+                              - "Yes"
+                              - "No"
+                          storage_size_gb:
+                            type: integer
+                            title: What is the storage size for FSX in GB?
+                            description: "You can always increase later"
+                            ui:placeholder: "100"
+                          throughput_capacity:
+                            type: string
+                            title: What is the throughput capacity MB/s?
+                            ui:placeholder: "128"
+
+                      # ── S3 Only (flat for dependency) ──
+                      s3_only:
+                        type: boolean
+                        title: "── S3 Only ──"
+                        description: "If checked, instance fields are not required"
+                        default: false
+                        ui:widget: checkbox
+
+                      # ── Autoscaling (flat for dependency) ──
+                      support_autoscaling:
+                        type: boolean
+                        title: "── Support Autoscaling ──"
+                        default: false
+                        ui:widget: checkbox
+
+                    dependencies:
+                      s3_only:
+                        oneOf:
+                          - properties:
+                              s3_only:
+                                enum:
+                                  - false
+                              instance_size:
+                                type: string
+                                title: Instance Size
+                                enum:
+                                  - Medium
+                                  - Large
+                              instance_count:
+                                type: integer
+                                title: How many Instances are required?
+                                default: 1
+                                ui:placeholder: "1"
+                              attached_volume_type:
+                                type: string
+                                title: Attached Volume Type of Storage
+                                enum:
+                                  - gp3
+                                  - io2
+                              attached_volume_size_gb:
+                                type: integer
+                                title: Attached Volume Size in GB
+                                ui:placeholder: "50"
+                            required:
+                              - instance_size
+                              - instance_count
+                              - attached_volume_type
+                              - attached_volume_size_gb
+                          - properties:
+                              s3_only:
+                                enum:
+                                  - true
+                              s3_only_info:
+                                type: string
+                                title: ""
+                                ui:readonly: true
+                                default: "ℹ️ S3 only mode. Instance fields are not required."
+
+                      support_autoscaling:
+                        oneOf:
+                          - properties:
+                              support_autoscaling:
+                                enum:
+                                  - true
+                              enable_default_autoscaling:
+                                type: boolean
+                                title: Do you want to enable default autoscaling policies?
+                                default: false
+                                ui:widget: checkbox
+                              cpu_threshold_scale_up:
+                                type: integer
+                                title: CPU Threshold for Scale Up (%)
+                                ui:placeholder: "80"
+                              cpu_threshold_scale_down:
+                                type: integer
+                                title: CPU Threshold for Scale Down (%)
+                                ui:placeholder: "20"
+                              max_instances:
+                                type: integer
+                                title: Maximum number of instances you would like to allow for scaling
+                                ui:placeholder: "10"
+                              on_demand_capacity:
+                                type: integer
+                                title: What is on demand capacity you want to setup as spot instances?
+                                ui:placeholder: "2"
+                            required:
+                              - cpu_threshold_scale_up
+                              - cpu_threshold_scale_down
+                              - max_instances
+                              - on_demand_capacity
+                          - properties:
+                              support_autoscaling:
+                                enum:
+                                  - false
+                              autoscaling_info:
+                                type: string
+                                title: ""
+                                ui:readonly: true
+                                default: "ℹ️ Autoscaling is not enabled."
+              required:
+                - aws_repositories
+
+            # ── Azure ──
+            - properties:
+                cloud_type_hidden:
+                  enum:
+                    - Azure
+                azure_repositories:
+                  type: array
+                  title: Repository & VM Configuration (Azure)
+                  description: "Click 'Add item' to add repository configurations"
+                  minItems: 1
+                  ui:options:
+                    addable: true
+                    removable: true
+                    orderable: true
+                  items:
+                    type: object
+                    required:
+                      - repo_name
+                      - vm_size
+                      - vm_count
+                      - os_type
+                      - storage_type
+                      - disk_size
+                    properties:
+                      repo_name:
+                        type: string
+                        title: Bitbucket Repo Name
+                        ui:placeholder: "my-azure-repo"
+
+                      vm_size:
+                        type: string
+                        title: What is VM Size?
+                        enum:
+                          - Small
                           - Medium
                           - Large
-                      instance_count:
+
+                      vm_count:
                         type: integer
-                        title: How many Instances are required?
+                        title: How many VMs are required?
                         default: 1
                         ui:placeholder: "1"
-                      attached_volume_type:
-                        type: string
-                        title: Attached Volume Type of Storage
-                        enum:
-                          - gp3
-                          - io2
-                      attached_volume_size_gb:
-                        type: integer
-                        title: Attached Volume Size in GB
-                        ui:placeholder: "50"
-                    required:
-                      - instance_size
-                      - instance_count
-                      - attached_volume_type
-                      - attached_volume_size_gb
-                  - properties:
-                      s3_only:
-                        enum:
-                          - true
 
-              support_autoscaling:
-                oneOf:
-                  - properties:
-                      support_autoscaling:
+                      os_type:
+                        type: string
+                        title: Operating System
                         enum:
-                          - true
-                      enable_default_autoscaling:
+                          - Windows
+                          - Linux
+
+                      storage_type:
+                        type: string
+                        title: For your application what type of storage?
+                        enum:
+                          - StandardSSD_LRS
+
+                      disk_size:
+                        type: string
+                        title: For your application what size of disk is required?
+                        enum:
+                          - "32"
+                          - "64"
+                          - "128"
+                          - "256"
+
+                      # ── Load Balancer Configuration ──
+                      azure_lb_config:
+                        type: object
+                        title: "Load Balancer Configuration"
+                        description: "If None is selected, below fields can be left empty"
+                        properties:
+                          load_balancer_type:
+                            type: string
+                            title: Do you need a load balancer?
+                            default: None
+                            enum:
+                              - None
+                              - Standard
+                          lb_protocol:
+                            type: string
+                            title: What is your load balancer protocol?
+                            ui:placeholder: "HTTPS"
+                          lb_port:
+                            type: string
+                            title: What is your load balancer port?
+                            ui:placeholder: "443"
+                          target_vm_port:
+                            type: string
+                            title: What is your target VM port to send traffic?
+                            ui:placeholder: "8080"
+
+                      # ── Autoscaling (flat for dependency) ──
+                      support_autoscaling:
                         type: boolean
-                        title: Do you want to enable default autoscaling policies?
+                        title: "── Support Autoscaling ──"
                         default: false
                         ui:widget: checkbox
-                      cpu_threshold_scale_up:
-                        type: integer
-                        title: CPU Threshold for Scale Up (%)
-                        ui:placeholder: "80"
-                      cpu_threshold_scale_down:
-                        type: integer
-                        title: CPU Threshold for Scale Down (%)
-                        ui:placeholder: "20"
-                      max_instances:
-                        type: integer
-                        title: Maximum number of instances you would like to allow for scaling
-                        ui:placeholder: "10"
-                      on_demand_capacity:
-                        type: integer
-                        title: What is on demand capacity you want to setup as spot instances?
-                        ui:placeholder: "2"
-                      need_load_balancer_autoscaling:
-                        type: boolean
-                        title: Do you need a load balancer?
-                        default: false
-                        ui:widget: checkbox
-                    required:
-                      - cpu_threshold_scale_up
-                      - cpu_threshold_scale_down
-                      - max_instances
-                      - on_demand_capacity
-                  - properties:
+
+                    dependencies:
                       support_autoscaling:
-                        enum:
-                          - false
+                        oneOf:
+                          - properties:
+                              support_autoscaling:
+                                enum:
+                                  - true
+                              cpu_threshold_scale_up:
+                                type: integer
+                                title: CPU Threshold for Scale Up (%)
+                                ui:placeholder: "80"
+                              cpu_threshold_scale_down:
+                                type: integer
+                                title: CPU Threshold for Scale Down (%)
+                                ui:placeholder: "20"
+                              max_instances:
+                                type: integer
+                                title: Maximum number of instances
+                                ui:placeholder: "10"
+                            required:
+                              - cpu_threshold_scale_up
+                              - cpu_threshold_scale_down
+                              - max_instances
+                          - properties:
+                              support_autoscaling:
+                                enum:
+                                  - false
+                              autoscaling_info:
+                                type: string
+                                title: ""
+                                ui:readonly: true
+                                default: "ℹ️ Autoscaling is not enabled."
+              required:
+                - azure_repositories
 
   # ============================================
   # ACTIONS
